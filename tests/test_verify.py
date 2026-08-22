@@ -48,3 +48,20 @@ def test_answer_with_no_citations_reports_none():
     result = verify_citations("I cannot answer that.", _results("303"))
     assert result.cited == []
     assert result.fabricated == []
+
+
+def test_subsection_citations_are_extracted():
+    """The model cites subsections naturally. If the regex misses them they
+    bypass verification entirely, and a fabricated [BNS 999(1)] would ship."""
+    assert extract_citations("Theft [BNS 303(2)] and gangs [BNS 313].") == ["303", "313"]
+
+
+def test_proviso_citations_are_extracted():
+    assert extract_citations("Community service [BNS 303(2) Proviso].") == ["303"]
+
+
+def test_fabricated_subsection_citation_is_detected_and_stripped():
+    result = verify_citations("Real [BNS 303(1)] fake [BNS 999(2)].", _results("303"))
+    assert result.fabricated == ["999"]
+    assert "999" not in result.cleaned_text
+    assert "[BNS 303(1)]" in result.cleaned_text

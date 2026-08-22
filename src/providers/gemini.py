@@ -32,6 +32,13 @@ class GeminiProvider:
                     config=types.GenerateContentConfig(
                         max_output_tokens=max_tokens,
                         temperature=0.0,
+                        # This is grounded extraction from sections already supplied
+                        # in the prompt, not a reasoning task, so a thinking budget
+                        # buys nothing. Left enabled, gemini-2.5-flash spends most of
+                        # max_output_tokens on invisible thinking tokens and silently
+                        # starves the visible answer (measured: 767/800 tokens to
+                        # thinking, 29 left for text, truncated mid-citation).
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
                     ),
                 )
                 return (response.text or "").strip()
