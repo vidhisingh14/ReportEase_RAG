@@ -61,3 +61,27 @@ def test_merge_runs_joins_a_wrapped_title():
     merged = merge_runs(runs)
     assert len(merged) == 1
     assert "apprehension has been ordered" in merged[0]
+
+
+def test_cross_page_title_wrap_is_detected_not_silently_dropped(monkeypatch):
+    """A title wrapping across a page break cannot be merged, because
+    merge_runs restarts per page. That must raise rather than drop a section
+    silently — a dropped section is a law the system will never cite."""
+    import src.parse_sections as ps
+
+    fake_pages = {
+        0: ["1. Short title.—"],
+        1: ["continued title text with no leading number.—"],
+    }
+
+    def fake_bold_runs(doc, pno, cfg):
+        return fake_pages.get(pno, [])
+
+    monkeypatch.setattr(ps, "bold_runs", fake_bold_runs)
+
+    class FakeDoc:
+        page_count = 2
+
+    with pytest.raises(ValueError, match="did not parse as headings"):
+        ps.parse_headings(FakeDoc(), {"heading_font_contains": "Bold",
+                                      "heading_min_size": 10.0}, 0)
