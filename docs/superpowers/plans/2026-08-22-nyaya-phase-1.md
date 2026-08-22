@@ -699,6 +699,28 @@ def test_genuine_hyphenate_split_across_lines_is_preserved():
     assert ("bank-notes", "bank-notes") in joins
 
 
+def test_three_part_hyphenate_survives_a_split_at_either_hyphen():
+    """'power-of-attorney' must survive being broken at EITHER hyphen. A
+    non-overlapping keep-list harvest sees only 'power-of' and would silently
+    join the second break into 'power-ofattorney'."""
+    text = (
+        "A power-of-attorney is a document.
+"
+        "First break: power-
+of-attorney here.
+"
+        "Second break: power-of-
+attorney there.
+"
+    )
+    keep = build_keep_list(text)
+    assert "power-of" in keep
+    assert "of-attorney" in keep
+    out, _ = dehyphenate(text, keep)
+    assert "power-ofattorney" not in out
+    assert "powerof-attorney" not in out
+
+
 def test_every_join_is_logged():
     text = "counter-\nfeit and inter-\nnational"
     _, joins = dehyphenate(text, build_keep_list(text))
@@ -730,7 +752,12 @@ import re
 # A hyphen with letters on both sides and no newline between them. Because
 # the pattern contains no newline, it can only match within a single line,
 # which is exactly what makes it evidence of a genuine hyphenate.
-MIDLINE_HYPHEN = re.compile(r"\b([A-Za-z]{2,})-([A-Za-z]{2,})\b")
+#
+# Wrapped in a zero-width lookahead so matches can OVERLAP. Without it,
+# findall consumes 'power-of' and never sees 'of-attorney', so a three-part
+# hyphenate split at its second hyphen would be silently joined into
+# 'power-ofattorney' -- altering statutory text with no error.
+MIDLINE_HYPHEN = re.compile(r"(?=\b([A-Za-z]{2,})-([A-Za-z]{2,})\b)")
 
 # A hyphen immediately before a line break.
 LINEBREAK_HYPHEN = re.compile(r"\b([A-Za-z]{2,})-[ \t]*\n[ \t]*([A-Za-z]{2,})\b")
@@ -768,7 +795,7 @@ def dehyphenate(text: str, keep_list: set):
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_dehyphen.py -v`
-Expected: 6 passed
+Expected: 7 passed
 
 - [ ] **Step 5: Commit**
 
