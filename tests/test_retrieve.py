@@ -44,8 +44,25 @@ def test_sparse_search_finds_ipc_378_maps_to_theft(conn):
     assert "bns-303" in [r.section_id for r in results]
 
 
-def test_dense_search_cannot_find_ipc_420(conn):
-    """The premise of hybrid retrieval, stated as a test rather than an
-    assertion: section numbers embed to nothing useful."""
-    results = dense_search(conn, "IPC 420", k=3)
-    assert "bns-318" not in [r.section_id for r in results]
+def test_dense_retrieval_collides_on_section_numbers(conn):
+    """Section numbers do not embed to nothing — they embed to number
+    identity. Asked for 'IPC 34', dense retrieval confidently returns BNS 34;
+    the correct answer is BNS 3. This is worse than returning nothing: a
+    confidence threshold catches an empty result, but not a plausible wrong
+    law. It is the measured justification for hybrid retrieval."""
+    results = dense_search(conn, "IPC 34", k=1)
+    assert results[0].section_id == "bns-34"      # the collision
+    assert results[0].section_id != "bns-3"       # the correct mapping
+
+
+def test_sparse_retrieval_gets_the_migration_right_where_dense_gets_it_wrong(conn):
+    """The same query, through the FTS document that carries maps_to_text."""
+    assert "bns-3" in [r.section_id for r in sparse_search(conn, "IPC 34", k=5)]
+
+
+def test_ipc_420_is_the_documented_exception(conn):
+    """'420' is Indian-English slang for a cheat, derived from IPC 420 itself,
+    so the model learned the association from ordinary text. It is the one IPC
+    number where dense retrieval happens to be right, and the reason the
+    original spec's argument was built on a misleading example."""
+    assert dense_search(conn, "IPC 420", k=1)[0].section_id == "bns-318"
