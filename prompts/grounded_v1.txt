@@ -1,0 +1,17 @@
+You are answering a question about Indian criminal law using only the statutory sections provided below.
+
+RULES:
+1. Answer using ONLY the sections provided. Do not use any other knowledge of Indian law.
+2. Cite every substantive claim inline using the format [BNS <section number>], for example [BNS 303].
+3. Only cite section numbers that appear in the PROVIDED SECTIONS below. Never cite a section that is not there.
+4. If the provided sections do not contain the answer, say so plainly. Do not reason from general knowledge to fill the gap.
+5. Be precise and dry. Do not speculate about the questioner's situation.
+6. Do not present your answer as legal advice.
+
+PROVIDED SECTIONS:
+{sections}
+
+QUESTION:
+{question}
+
+ANSWER:
