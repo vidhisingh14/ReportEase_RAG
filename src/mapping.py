@@ -21,9 +21,19 @@ OUTPUT = Path("data/processed/mappings.json")
 SECTION_DECLARATION = re.compile(r"^\s*(\d+)\s*\.", re.MULTILINE)
 # A left cell that continues one: '318 (4)'
 SECTION_CONTINUATION = re.compile(r"^\s*(\d+)\s*\(", re.MULTILINE)
-# An IPC section number in the right cell. The cell is narrowly wrapped, so
-# the number may be followed by a newline rather than a space.
-IPC_NUMBER = re.compile(r"(?:^|\n)\s*(\d+[A-Z]?)\s*\.")
+# An IPC section number in the right cell. Four real formats occur:
+#   378.        plain
+#   376AB.      multi-letter suffix
+#   171-I.      hyphen-Roman suffix
+#   376(3)      subsection reference, no trailing dot
+# The token must START with digits, so a bare subsection marker like "(3)"
+# on its own line cannot match -- the match is anchored on the number that
+# precedes the paren, never on a parenthesised group alone. The cell is
+# narrowly wrapped, so the number may be followed by a newline rather than
+# a space. A parenthesised subsection reference ("376(3)") collapses to its
+# parent section number ("376"); callers de-duplicate against the existing
+# list, so a section citing both "376" and "376(3)" ends up with "376" once.
+IPC_NUMBER = re.compile(r"(?:^|\n)\s*(\d+[A-Z]{0,3}(?:-[IVXL]+)?)\s*[.(]")
 
 
 def parse_mappings(act_key: str) -> dict:

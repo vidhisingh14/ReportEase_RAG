@@ -36,6 +36,34 @@ def test_no_placeholder_text_leaks_into_numbers(mappings):
     assert "Deleted" not in flat
 
 
+def test_multi_letter_suffix_is_captured(mappings):
+    """BNS 70 (gang rape) cites IPC 376DA and 376DB. The original regex
+    allowed at most one uppercase letter after the digits, so a two-letter
+    suffix silently dropped these -- with 376D still present in the list,
+    the section looked complete rather than obviously broken."""
+    assert "376DA" in mappings["70"]
+    assert "376DB" in mappings["70"]
+
+
+def test_hyphen_roman_suffix_is_captured(mappings):
+    """BNS 196 cites IPC 153AA alongside 153A. Same silent-drop shape as
+    376DA/376DB: the truncated suffix (153A) was already present, so the
+    missing citation (153AA) did not show up as an empty or missing entry."""
+    assert "153AA" in mappings["196"]
+
+
+def test_subsection_reference_collapses_without_leaking_the_parenthesis(mappings):
+    """BNS 65 cites IPC 376(3) -- a subsection reference with no trailing
+    dot. It must collapse to its parent section number '376' (a user
+    searches by section, not subsection), and the bare parenthesised
+    marker must never itself become a captured 'number'."""
+    assert "376" in mappings["65"]
+    flat = [n for ipc in mappings.values() for n in ipc]
+    for n in flat:
+        assert not n.startswith("(")
+        assert n[0].isdigit()
+
+
 def test_mapping_text_is_a_flat_searchable_string():
     assert mapping_text(["378", "379"], "IPC") == "IPC 378 IPC 379"
 
