@@ -38,6 +38,23 @@ def test_every_join_is_logged():
     assert len(joins) == 2
 
 
+def test_three_part_hyphenate_survives_a_split_at_either_hyphen():
+    """'power-of-attorney' must survive being broken at EITHER hyphen. A
+    non-overlapping keep-list harvest sees only 'power-of' and would silently
+    join the second break into 'power-ofattorney'."""
+    text = (
+        "A power-of-attorney is a document.\n"
+        "First break: power-\nof-attorney here.\n"
+        "Second break: power-of-\nattorney there.\n"
+    )
+    keep = build_keep_list(text)
+    assert "power-of" in keep
+    assert "of-attorney" in keep
+    out, _ = dehyphenate(text, keep)
+    assert "power-ofattorney" not in out
+    assert "powerof-attorney" not in out
+
+
 def test_real_corpus_join_count_is_small_and_reviewable():
     import pymupdf
     from src.config import load_act_config

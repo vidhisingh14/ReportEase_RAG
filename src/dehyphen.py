@@ -3,7 +3,11 @@ import re
 # A hyphen with letters on both sides and no newline between them. Because
 # the pattern contains no newline, it can only match within a single line,
 # which is exactly what makes it evidence of a genuine hyphenate.
-MIDLINE_HYPHEN = re.compile(r"\b([A-Za-z]{2,})-([A-Za-z]{2,})\b")
+#
+# Wrapped in a zero-width lookahead so matches can overlap. Without this,
+# findall consumes 'power-of' and never sees 'of-attorney', so a three-part
+# hyphenate split at its second hyphen would be silently joined.
+MIDLINE_HYPHEN = re.compile(r"(?=\b([A-Za-z]{2,})-([A-Za-z]{2,})\b)")
 
 # A hyphen immediately before a line break.
 LINEBREAK_HYPHEN = re.compile(r"\b([A-Za-z]{2,})-[ \t]*\n[ \t]*([A-Za-z]{2,})\b")
