@@ -363,7 +363,6 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'src.manifest'`
 
 ```python
 from dataclasses import dataclass, field, asdict
-from typing import Any
 
 
 @dataclass
