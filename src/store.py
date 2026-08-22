@@ -26,6 +26,8 @@ INSERT INTO sections (
     %(maps_to)s, %(maps_to_text)s, %(source_page)s, %(char_count)s
 )
 ON CONFLICT (id) DO UPDATE SET
+    act_number = EXCLUDED.act_number,
+    as_of_date = EXCLUDED.as_of_date,
     text = EXCLUDED.text,
     section_title = EXCLUDED.section_title,
     chapter_number = EXCLUDED.chapter_number,
