@@ -1787,12 +1787,27 @@ log = logging.getLogger(__name__)
 OUTPUT = Path("data/processed/mappings.json")
 
 # A left cell that declares a new BNS section: '303. Theft.'
-SECTION_DECLARATION = re.compile(r"^\s*(\d+)\s*\.")
+# Searched with MULTILINE against the whole (possibly multi-line) cell,
+# not just anchored to the first character: some cells open with a plain
+# offence label ('Cheating by personation\n319(1)\n319(2)') and only carry
+# the section number on a later line. Matching cell-start only leaves
+# `current` stuck on the previous section and cross-contaminates its list.
+SECTION_DECLARATION = re.compile(r"^\s*(\d+)\s*\.", re.MULTILINE)
 # A left cell that continues one: '318 (4)'
-SECTION_CONTINUATION = re.compile(r"^\s*(\d+)\s*\(")
-# An IPC section number in the right cell. The cell is narrowly wrapped, so
-# the number may be followed by a newline rather than a space.
-IPC_NUMBER = re.compile(r"(?:^|\n)\s*(\d+[A-Z]?)\s*\.")
+SECTION_CONTINUATION = re.compile(r"^\s*(\d+)\s*\(", re.MULTILINE)
+# An IPC section number in the right cell. Four real formats occur:
+#   378.        plain
+#   376AB.      multi-letter suffix
+#   171-I.      hyphen-Roman suffix
+#   376(3)      subsection reference, no trailing dot
+# The token must START with digits, so a bare subsection marker like "(3)"
+# on its own line cannot match -- the match is anchored on the number that
+# precedes the paren, never on a parenthesised group alone. The cell is
+# narrowly wrapped, so the number may be followed by a newline rather than
+# a space. A parenthesised subsection reference ("376(3)") collapses to its
+# parent section number ("376"); callers de-duplicate against the existing
+# list, so a section citing both "376" and "376(3)" ends up with "376" once.
+IPC_NUMBER = re.compile(r"(?:^|\n)\s*(\d+[A-Z]{0,3}(?:-[IVXL]+)?)\s*[.(]")
 
 
 def parse_mappings(act_key: str) -> dict:
@@ -1812,7 +1827,12 @@ def parse_mappings(act_key: str) -> dict:
     current = None
 
     for pno in range(lo - 1, hi):
-        tables = doc[pno].find_tables()
+        # The default "lines" strategy requires a complete ruling on both
+        # sides of a row to recognize it. Rows that straddle a page break
+        # (no ruling above the first row of a continued table) are silently
+        # dropped rather than misparsed -- this is exactly where BNS 318's
+        # continuation row to IPC 420 lives. "lines_strict" recovers them.
+        tables = doc[pno].find_tables(strategy="lines_strict")
         if not tables.tables:
             continue
         for row in tables.tables[0].extract():
@@ -1821,12 +1841,12 @@ def parse_mappings(act_key: str) -> dict:
             left = (row[0] or "").strip()
             right = (row[1] or "").strip()
 
-            declaration = SECTION_DECLARATION.match(left)
+            declaration = SECTION_DECLARATION.search(left)
             if declaration:
                 current = declaration.group(1)
                 mappings.setdefault(current, [])
             else:
-                continuation = SECTION_CONTINUATION.match(left)
+                continuation = SECTION_CONTINUATION.search(left)
                 if continuation:
                     current = continuation.group(1)
                     mappings.setdefault(current, [])
