@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.providers import GeminiProvider, GenerationProvider
+from src.providers import GenerationProvider, get_provider
 from src.retrieve import Retrieved, dense_search
 
 PROMPT_VERSION = "grounded_v1"
@@ -21,12 +21,6 @@ class Answer:
     text: str
     prompt_version: str
     retrieved: list = field(default_factory=list)
-
-
-def get_provider(name: str = "gemini") -> GenerationProvider:
-    if name == "gemini":
-        return GeminiProvider("gemini-2.5-flash")
-    raise ValueError(f"unknown provider: {name!r}")
 
 
 def build_prompt(question: str, results: list) -> str:

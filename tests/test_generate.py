@@ -68,3 +68,13 @@ def test_gemini_provider_returns_text_live():
     out = provider.generate("Reply with exactly the word: acknowledged", max_tokens=20)
     assert isinstance(out, str)
     assert out.strip()
+
+
+def test_generate_module_declares_no_provider_model_ids():
+    """The provider boundary is the point of this module. A model id string in
+    generate.py means adding Claude would require editing it, which is exactly
+    what the interface exists to prevent."""
+    import pathlib
+    source = pathlib.Path("src/generate.py").read_text(encoding="utf-8")
+    for marker in ("gemini-", "claude-", "gpt-"):
+        assert marker not in source, f"provider model id {marker!r} leaked into generate.py"
