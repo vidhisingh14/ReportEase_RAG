@@ -1499,10 +1499,35 @@ def build_sections(act_key: str) -> list:
     doc = pymupdf.open(entry["path"])
 
     body_start = body_start_page(doc, cfg["body_start_marker"])
-    joined, offsets, _ = joined_body(doc, cfg)
+    joined, raw_offsets, _ = joined_body(doc, cfg)
 
     keep_list = build_keep_list(joined)
-    joined, joins = dehyphenate(joined, keep_list)
+
+    # joined_body's offsets are char positions in the PRE-dehyphenation text.
+    # Dehyphenating the whole string in one pass (as opposed to per page)
+    # would leave those offsets stale by however many characters each join
+    # removed upstream of a given page, which is usually harmless but can
+    # shift a heading's true start behind the page-floor search bound used
+    # in locate_headings. Dehyphenating page by page and re-deriving the
+    # offsets the same way joined_body does keeps offsets and text in sync.
+    # (Verified: none of this document's line-wrap hyphens straddle a page
+    # boundary, so splitting by page loses no genuine joins.)
+    bounds = [offset for offset, _ in raw_offsets] + [len(joined)]
+    joined_parts = []
+    offsets = []
+    pos = 0
+    joins = []
+    for i, (_, page_index) in enumerate(raw_offsets):
+        page_text_slice = joined[bounds[i] : bounds[i + 1]]
+        if i < len(raw_offsets) - 1:
+            page_text_slice = page_text_slice[:-1]  # drop the joining "\n"
+        new_text, page_joins = dehyphenate(page_text_slice, keep_list)
+        joins.extend(page_joins)
+        offsets.append((pos, page_index))
+        joined_parts.append(new_text)
+        pos += len(new_text) + 1
+    joined = "\n".join(joined_parts)
+
     for before, after in joins:
         log.info("dehyphenate: %r -> %r", before, after)
 
@@ -1634,7 +1659,7 @@ Expected: 13 passed
 - [ ] **Step 5: Run ingest and review the diff log by hand**
 
 Run: `.venv/Scripts/python.exe -m src.ingest`
-Expected: `wrote 358 sections to data/processed/sections.json (6 title diffs)`
+Expected: `wrote 358 sections to data/processed/sections.json (4 title diffs)`
 
 Read every logged diff. All six should be cosmetic — apostrophes on §26 and §89, trailing punctuation on §44, hyphenation on §179 and §180, and the index's own typo on §330. **If any diff is not cosmetic, stop and fix the parser.** This review is an acceptance criterion, not a formality.
 
