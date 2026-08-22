@@ -70,11 +70,12 @@ def parse_headings(doc, cfg: dict, body_start: int) -> list:
     candidate cross-page wrap, and any such run anywhere in the document
     raises instead of silently dropping a section.
 
-    A page-initial bold run with no letters at all (e.g. a single stray
-    decorative glyph from a symbol font, which this PDF renders bold at
-    heading size on a number of pages) is not a candidate title continuation
-    — a wrapped title is always readable text — so it is excluded from the
-    check rather than raising a false alarm.
+    A page-initial bold run of punctuation only is not a wrapped title. In
+    constructions like "Explanation.—" the em-dash is set in the bold
+    font while the preceding word is not, so a stray bold U+2014 can open a
+    page as a bold run of its own (17 such runs exist in BNS). A genuine
+    wrapped title always contains letters, so requiring a letter before
+    flagging a run separates the two without weakening the detector.
     """
     headings = []
     unparsed_first_runs = []
