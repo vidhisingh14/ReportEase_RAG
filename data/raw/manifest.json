@@ -1,0 +1,32 @@
+{
+  "bns": {
+    "path": "data/raw/a202345.pdf",
+    "sha256": "ff92dcc72778944011807644b6033b1140ddbe6d7e9f82ac32fd419dae03aa86",
+    "act_number": "45 of 2023",
+    "status": "enacted",
+    "as_of_date": "2025-10-06",
+    "pages": 112,
+    "retrieved": "2026-08-21",
+    "source": "indiacode.nic.in/bitstream/123456789/20062/1/a202345.pdf"
+  },
+  "bnss": {
+    "path": "data/raw/A202346.pdf",
+    "sha256": "54b27a4f2786dc5867c2cc23391e8359b3b29125684119acbc652d1630a716d6",
+    "act_number": "46 of 2023",
+    "status": "enacted",
+    "as_of_date": "2025-10-06",
+    "pages": 282,
+    "retrieved": "2026-08-21",
+    "source": "indiacode.nic.in/bitstream/123456789/20099/1/A202346.pdf"
+  },
+  "bns_ipc_mapping": {
+    "path": "data/raw/BNS2023.pdf",
+    "sha256": "a83f12a93e32c9e0b39a85f75850a448dc4682b1b44b2d6bd680165bb9931549",
+    "act_number": "NCRB Sankalan mapping table",
+    "status": "enacted",
+    "as_of_date": "2025-10-06",
+    "pages": 237,
+    "retrieved": "2026-08-21",
+    "source": "ncrb.gov.in/uploads/SankalanPortal/DownloadPDF/BNS2023.pdf"
+  }
+}
