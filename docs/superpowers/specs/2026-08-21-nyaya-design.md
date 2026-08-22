@@ -267,6 +267,22 @@ SPEC.md §5 justifies hybrid retrieval like this:
 
 **BM25 over the gazette text cannot match it either.** "IPC 420" does not appear anywhere in `a202345.pdf`. The BNS gazette does not mention its IPC ancestry at all — that relationship exists only in the NCRB mapping table. So for the query *"What is IPC 420 now?"*, both dense and sparse retrieval over section text return nothing useful, and the migration category would score near zero regardless of retrieval strategy.
 
+> **Measured correction, 2026-08-23.** The sentence quoted above from SPEC.md — that a section number "embeds to nothing useful" — is **false**, and the truth is worse than the claim. Measured against the live 358-section index:
+>
+> | Test | Dense | Sparse |
+> |---|---|---|
+> | recall@3 over 9 hand-picked mapped IPC numbers | 4/9 | **9/9** |
+> | 18 IPC numbers that also exist as BNS numbers — returned the *same* number | **14/18** | — |
+> | 18 IPC numbers that also exist as BNS numbers — returned the *correct* mapping | **0/18** | — |
+>
+> Section numbers do not embed to nothing. They embed to **number identity**. Asked for "IPC 34", dense retrieval confidently returns BNS 34; the correct answer is BNS 3. Asked for "IPC 302" it returns BNS 302; the correct answer is BNS 103.
+>
+> This inverts the argument's shape without changing its conclusion. "Returns nothing" would be a harmless failure that a confidence threshold catches. "Returns a plausible wrong law" is the dangerous one — a migration answer that looks right, cites a real section, and is wrong. The hybrid case is therefore **stronger** than originally stated, and the `maps_to_text` fix in this section is what carries it.
+>
+> One genuine exception: `dense_search("IPC 420")` *does* return BNS 318 Cheating at rank 1 (score 0.7201). "420" is Indian-English slang for a cheat, derived from IPC 420 itself, so the embedding model learned the association from ordinary text. It is the one IPC number famous enough to have escaped its own numbering — which makes it the worst possible example to have built the original argument on.
+>
+> Consequence for Phase 2: the migration category will show dense retrieval as *actively harmful*, not merely weak, and that is the honest headline. Per SPEC.md §7, a surprising result honestly reported is worth more than a predicted one.
+
 **Decision:** denormalise `maps_to` into the full-text search document, via a dedicated plain column.
 
 Ingest populates a `maps_to_text` column — a flat string such as `"IPC 378 IPC 379"` — derived from the same parsed mapping data that fills `maps_to jsonb`. The generated tsvector is then built from that column:

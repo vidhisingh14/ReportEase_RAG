@@ -179,7 +179,9 @@ An earlier version of this spec proposed stripping "lines that appear on more th
 
 Fuse with Reciprocal Rank Fusion, `score = sum(1 / (k + rank))` with k = 60. Take the top 8 after fusion.
 
-Hybrid is not decoration here and the reason is specific to this corpus. Section numbers carry no semantic meaning. The string "420" embeds to nothing useful, so dense retrieval cannot find it. BM25 matches it exactly. Conversely "he took my phone while I was asleep" has no keyword overlap with the theft section but is semantically close. Each method fails exactly where the other works. Measure this rather than asserting it, see section 8.
+Hybrid is not decoration here and the reason is specific to this corpus. Section numbers carry no semantic meaning of the kind that helps.
+
+The original version of this paragraph claimed the string "420" embeds to nothing useful, so dense retrieval cannot find it. Measured against the real index on 2026-08-23, that is false, and the truth makes the hybrid case stronger. Section numbers embed to **number identity**: asked for "IPC 34", dense retrieval confidently returns BNS 34, when the correct answer is BNS 3. Across 18 IPC numbers that also exist as BNS section numbers, dense returned the same number 14 times and the correct mapping **zero** times, against 9/9 recall@3 for sparse. Returning nothing would be a harmless failure a threshold catches; returning a plausible wrong law is the dangerous one. See `docs/superpowers/specs/2026-08-21-nyaya-design.md` §5 for the full measurement. Conversely "he took my phone while I was asleep" has no keyword overlap with the theft section but is semantically close. Each method fails exactly where the other works. Measure this rather than asserting it, see section 8.
 
 **Rerank.** Cross encoder over the top 8, keep the top 4. Phase 3.
 
