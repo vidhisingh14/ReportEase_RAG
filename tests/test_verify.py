@@ -65,3 +65,25 @@ def test_fabricated_subsection_citation_is_detected_and_stripped():
     assert result.fabricated == ["999"]
     assert "999" not in result.cleaned_text
     assert "[BNS 303(1)]" in result.cleaned_text
+
+
+def test_multi_number_bracket_verifies_every_number():
+    """A model that writes both numbers in one bracket must not have the
+    second escape verification."""
+    assert extract_citations("See [BNS 303 and 304].") == ["303", "304"]
+    result = verify_citations("See [BNS 303 and 304].", _results("303"))
+    assert result.fabricated == ["304"]
+
+
+def test_lowercase_citation_is_still_verified():
+    """A lowercase [bns 999] would otherwise ship undetected."""
+    result = verify_citations("Fraud is [bns 999].", _results("303"))
+    assert result.fabricated == ["999"]
+    assert "999" not in result.cleaned_text
+
+
+def test_subsection_marker_is_not_read_as_a_section_number():
+    """[BNS 303(2)] cites section 303, not section 2. Naive number extraction
+    inside the bracket would invent a citation to section 2."""
+    assert extract_citations("Theft [BNS 303(2)].") == ["303"]
+    assert extract_citations("Punishment [BNS 4(c)] applies.") == ["4"]

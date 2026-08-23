@@ -7,7 +7,27 @@ log = logging.getLogger(__name__)
 # The model cites subsections naturally: [BNS 303(2)], [BNS 303(2) Proviso].
 # Only the base section number is verifiable, since the retrieved set is keyed
 # by section. Anything up to the closing bracket is tolerated and ignored.
-CITATION = re.compile(r"\[BNS\s+(\d+[A-Z]?)[^\]]*\]")
+#
+# Match the whole bracketed citation; parse its contents separately. Case
+# insensitive, because a lowercase [bns 999] would otherwise bypass
+# verification entirely.
+CITATION = re.compile(r"\[BNS\s+([^\]]*)\]", re.IGNORECASE)
+
+# Subsection and clause markers are not section numbers. They must be removed
+# before extracting numbers, or [BNS 303(2)] would yield a phantom citation to
+# section 2.
+_SUBSECTION = re.compile(r"\([^)]*\)")
+_SECTION_NUMBER = re.compile(r"\b(\d+[A-Z]?)\b")
+
+
+def _numbers_in(inner: str) -> list:
+    """Every section number cited inside one bracket.
+
+    A bracket may hold more than one. The prompt asks for one per bracket, but
+    a model that writes "[BNS 303 and 304]" must not have the second number
+    silently escape verification.
+    """
+    return _SECTION_NUMBER.findall(_SUBSECTION.sub(" ", inner))
 
 
 @dataclass
@@ -25,9 +45,10 @@ def extract_citations(text: str) -> list:
     citation and must not be treated as one.
     """
     seen = []
-    for number in CITATION.findall(text):
-        if number not in seen:
-            seen.append(number)
+    for inner in CITATION.findall(text):
+        for number in _numbers_in(inner):
+            if number not in seen:
+                seen.append(number)
     return seen
 
 
@@ -48,7 +69,13 @@ def verify_citations(answer_text: str, results: list) -> VerificationResult:
         log.warning("fabricated citation stripped: BNS %s not in retrieved set", number)
 
     def _drop_if_fabricated(match: "re.Match") -> str:
-        return "" if match.group(1) in fabricated_set else match.group(0)
+        # A bracket mixing a real and a fabricated number cannot be left
+        # standing, since it would still assert the fabricated one: drop the
+        # whole bracket if any number inside it is fabricated.
+        numbers = _numbers_in(match.group(1))
+        if any(n in fabricated_set for n in numbers):
+            return ""
+        return match.group(0)
 
     # Strip by regex, not literal replace: a fabricated citation can carry a
     # subsection or proviso, e.g. [BNS 999(1)], which a literal
