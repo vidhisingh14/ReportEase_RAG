@@ -3083,6 +3083,13 @@ class GeminiProvider:
                     config=types.GenerateContentConfig(
                         max_output_tokens=max_tokens,
                         temperature=0.0,
+                        # This is grounded extraction from sections already supplied
+                        # in the prompt, not a reasoning task, so a thinking budget
+                        # buys nothing. Left enabled, gemini-2.5-flash spends most of
+                        # max_output_tokens on invisible thinking tokens and silently
+                        # starves the visible answer (measured: 767/800 tokens to
+                        # thinking, 29 left for text, truncated mid-citation).
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
                     ),
                 )
                 return (response.text or "").strip()
@@ -3100,7 +3107,25 @@ class GeminiProvider:
 from src.providers.base import GenerationProvider
 from src.providers.gemini import GeminiProvider
 
-__all__ = ["GenerationProvider", "GeminiProvider"]
+# The registry lives here, not in generate.py, so a provider's model ids never
+# appear outside this package. Adding Claude means adding a module here and one
+# entry below — nothing in the generation module changes.
+_PROVIDERS = {
+    "gemini": GeminiProvider,
+}
+
+
+def get_provider(name: str = "gemini") -> GenerationProvider:
+    try:
+        factory = _PROVIDERS[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown provider: {name!r}. Known: {sorted(_PROVIDERS)}"
+        ) from None
+    return factory()
+
+
+__all__ = ["GenerationProvider", "GeminiProvider", "get_provider"]
 ```
 
 - [ ] **Step 7: Write `src/generate.py`**
@@ -3253,7 +3278,30 @@ from dataclasses import dataclass, field
 
 log = logging.getLogger(__name__)
 
-CITATION = re.compile(r"\[BNS\s+(\d+[A-Z]?)\]")
+# The model cites subsections naturally: [BNS 303(2)], [BNS 303(2) Proviso].
+# Only the base section number is verifiable, since the retrieved set is keyed
+# by section. Anything up to the closing bracket is tolerated and ignored.
+#
+# Match the whole bracketed citation; parse its contents separately. Case
+# insensitive, because a lowercase [bns 999] would otherwise bypass
+# verification entirely.
+CITATION = re.compile(r"\[BNS\s+([^\]]*)\]", re.IGNORECASE)
+
+# Subsection and clause markers are not section numbers. They must be removed
+# before extracting numbers, or [BNS 303(2)] would yield a phantom citation to
+# section 2.
+_SUBSECTION = re.compile(r"\([^)]*\)")
+_SECTION_NUMBER = re.compile(r"\b(\d+[A-Z]?)\b")
+
+
+def _numbers_in(inner: str) -> list:
+    """Every section number cited inside one bracket.
+
+    A bracket may hold more than one. The prompt asks for one per bracket, but
+    a model that writes "[BNS 303 and 304]" must not have the second number
+    silently escape verification.
+    """
+    return _SECTION_NUMBER.findall(_SUBSECTION.sub(" ", inner))
 
 
 @dataclass
@@ -3271,9 +3319,10 @@ def extract_citations(text: str) -> list:
     citation and must not be treated as one.
     """
     seen = []
-    for number in CITATION.findall(text):
-        if number not in seen:
-            seen.append(number)
+    for inner in CITATION.findall(text):
+        for number in _numbers_in(inner):
+            if number not in seen:
+                seen.append(number)
     return seen
 
 
@@ -3289,11 +3338,28 @@ def verify_citations(answer_text: str, results: list) -> VerificationResult:
     valid = [n for n in cited if n in retrieved]
     fabricated = [n for n in cited if n not in retrieved]
 
-    cleaned = answer_text
+    fabricated_set = set(fabricated)
     for number in fabricated:
         log.warning("fabricated citation stripped: BNS %s not in retrieved set", number)
-        cleaned = cleaned.replace(f"[BNS {number}]", "")
+
+    def _drop_if_fabricated(match: "re.Match") -> str:
+        # A bracket mixing a real and a fabricated number cannot be left
+        # standing, since it would still assert the fabricated one: drop the
+        # whole bracket if any number inside it is fabricated.
+        numbers = _numbers_in(match.group(1))
+        if any(n in fabricated_set for n in numbers):
+            return ""
+        return match.group(0)
+
+    # Strip by regex, not literal replace: a fabricated citation can carry a
+    # subsection or proviso, e.g. [BNS 999(1)], which a literal
+    # f"[BNS {number}]" match would never find, leaving it in cleaned_text
+    # even though it was reported as fabricated.
+    cleaned = CITATION.sub(_drop_if_fabricated, answer_text)
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    # Stripping a citation that ended a sentence can leave a dangling space
+    # before terminal punctuation, e.g. "fraud is  ." -> "fraud is ."
+    cleaned = re.sub(r"[ \t]+([.,;:])", r"\1", cleaned)
 
     return VerificationResult(
         cited=cited, valid=valid, fabricated=fabricated, cleaned_text=cleaned
