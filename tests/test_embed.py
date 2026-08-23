@@ -1,7 +1,5 @@
 import pytest
 
-import pytest
-
 from src.embed import embed_texts
 from src.embed_format import DIMENSION
 
@@ -30,10 +28,10 @@ def test_vectors_are_normalised():
     assert abs(magnitude - 1.0) < 0.01
 
 
-def test_cache_makes_a_repeat_call_free(tmp_path):
+def test_cache_makes_a_repeat_call_free(tmp_path, monkeypatch):
     from src import embed
 
-    embed.CACHE_DIR = tmp_path
+    monkeypatch.setattr(embed, "CACHE_DIR", tmp_path)
     first = embed_texts(["a test sentence about theft"])
     calls_before = embed.API_CALLS
     second = embed_texts(["a test sentence about theft"])

@@ -167,6 +167,14 @@ def validate(sections: list, index: dict, cfg: dict):
     if len(sections) != expected:
         errors.append(f"expected {expected} sections, got {len(sections)}")
 
+    expected_chapters = cfg.get("expected_chapter_count")
+    if expected_chapters is not None:
+        chapter_numbers = {s.chapter_number for s in sections}
+        if len(chapter_numbers) != expected_chapters:
+            errors.append(
+                f"expected {expected_chapters} chapters, got {len(chapter_numbers)}"
+            )
+
     numbers = [int(s.section_number) for s in sections]
     if numbers != sorted(numbers):
         errors.append("section numbers are not monotonic in document order")

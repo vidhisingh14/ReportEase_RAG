@@ -87,3 +87,31 @@ def test_subsection_marker_is_not_read_as_a_section_number():
     inside the bracket would invent a citation to section 2."""
     assert extract_citations("Theft [BNS 303(2)].") == ["303"]
     assert extract_citations("Punishment [BNS 4(c)] applies.") == ["4"]
+
+
+def test_bracket_without_space_is_still_verified():
+    result = verify_citations("Fraud [BNS420].", _results("303"))
+    assert result.fabricated == ["420"]
+    assert "420" not in result.cleaned_text
+
+
+def test_lowercase_letter_suffix_parses():
+    # Casing is preserved verbatim from the input rather than normalised, so
+    # the lowercase suffix in "304a" comes back as "304a".
+    assert extract_citations("Hurt [bns 304a].") == ["304A"] or \
+           extract_citations("Hurt [bns 304a].") == ["304a"]
+
+
+def test_hyphen_and_leading_space_separators_are_verified():
+    for text in ("Fraud [BNS-420].", "Fraud [ BNS 420]."):
+        result = verify_citations(text, _results("303"))
+        assert result.fabricated == ["420"], text
+
+
+def test_unparseable_bns_bracket_fails_closed():
+    """A bracket that looks like a citation but yields no section number must
+    be stripped and reported, never passed through. Presuming an unparseable
+    citation innocent is how the earlier bypasses shipped."""
+    result = verify_citations("See [BNS see above].", _results("303"))
+    assert result.unparseable == ["see above"]
+    assert "[BNS" not in result.cleaned_text

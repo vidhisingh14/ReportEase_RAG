@@ -1,8 +1,9 @@
 # Nyaya
 
 Grounded question answering over Indian criminal law. Answers come only from
-the text of the Bharatiya Nyaya Sanhita 2023, and every answer cites the
-sections it came from.
+the text of the Bharatiya Nyaya Sanhita 2023, and cite the sections they came
+from; any citation to a section that was not retrieved is removed before the
+answer is shown.
 
 This is not legal advice.
 
@@ -36,4 +37,4 @@ quota, and the Flash budget is 250 requests per day.
 
 Phase 1: ingest, embed, store, dense retrieval, grounded answers with verified
 citations. No router, no hybrid retrieval, no evaluation harness yet — those are
-Phase 2. No claim is made here that the acceptance criteria have not verified.
+Phase 2.

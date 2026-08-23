@@ -61,12 +61,17 @@ def test_fts_includes_mapping_tokens(conn):
         " 'Test','I','Chapter','some body text','IPC 420',1,14)"
         " ON CONFLICT (id) DO NOTHING"
     )
-    row = conn.execute(
-        "SELECT id FROM sections WHERE fts @@ plainto_tsquery('english', 'IPC 420')"
-    ).fetchone()
-    assert row is not None
-    conn.execute("DELETE FROM sections WHERE id = 'test-1'")
-    conn.commit()
+    try:
+        row = conn.execute(
+            "SELECT id FROM sections WHERE fts @@ plainto_tsquery('english', 'IPC 420')"
+        ).fetchone()
+        assert row is not None
+    finally:
+        # Must run even if the assertion above fails, or 'test-1' survives
+        # into the module-scoped transaction and a later commit() persists
+        # it, leaving 359 sections and breaking acceptance.
+        conn.execute("DELETE FROM sections WHERE id = 'test-1'")
+        conn.commit()
 
 
 def test_queries_text_is_nullable_for_sensitive_routes(conn):

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.providers import GenerationProvider, get_provider
-from src.retrieve import Retrieved, dense_search
+from src.retrieve import dense_search
 
 PROMPT_VERSION = "grounded_v1"
 PROMPT_PATH = Path(f"prompts/{PROMPT_VERSION}.txt")

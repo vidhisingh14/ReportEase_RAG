@@ -13,8 +13,9 @@ MAX_RETRIES = 5
 
 
 class GeminiProvider:
-    def __init__(self, model: str = "gemini-2.5-flash"):
+    def __init__(self, model: str = "gemini-2.5-flash", thinking_budget: int = 0):
         self.name = model
+        self.thinking_budget = thinking_budget
         self._client = None
 
     def _client_or_create(self):
@@ -37,8 +38,12 @@ class GeminiProvider:
                         # buys nothing. Left enabled, gemini-2.5-flash spends most of
                         # max_output_tokens on invisible thinking tokens and silently
                         # starves the visible answer (measured: 767/800 tokens to
-                        # thinking, 29 left for text, truncated mid-citation).
-                        thinking_config=types.ThinkingConfig(thinking_budget=0),
+                        # thinking, 29 left for text, truncated mid-citation). Default
+                        # is 0 for that reason; overridable per instance so Phase 2 can
+                        # A/B a nonzero budget without editing this provider.
+                        thinking_config=types.ThinkingConfig(
+                            thinking_budget=self.thinking_budget
+                        ),
                     ),
                 )
                 return (response.text or "").strip()

@@ -10,7 +10,7 @@ import pymupdf
 
 from src.config import load_act_config
 from src.db import connect
-from src.manifest import verify_source
+from src.manifest import sha256_file, verify_source
 from src.parse_index import parse_index
 from src.retrieve import dense_search, sparse_search
 from src.store import verify_embedding_model
@@ -29,7 +29,10 @@ def main() -> int:
     sections = json.load(open("data/processed/sections.json", encoding="utf-8"))
     mappings = json.load(open("data/processed/mappings.json", encoding="utf-8"))
 
-    check("source hash verified", entry["sha256"].startswith("ff92dcc7"))
+    # Recompute the hash from the PDF on disk and compare to the manifest's
+    # recorded value, rather than re-reading the manifest's own string back
+    # at itself (which cannot fail regardless of what the file contains).
+    check("source hash verified", sha256_file(entry["path"]) == entry["sha256"])
     check("section count is exactly 358", len(sections) == 358, f"got {len(sections)}")
 
     numbers = [int(s["section_number"]) for s in sections]
@@ -64,6 +67,10 @@ def main() -> int:
         check("358 sections in database", loaded == 358, f"got {loaded}")
         check("embedding count equals section count", embedded == loaded,
               f"{embedded} vs {loaded}")
+
+        distinct = conn.execute("SELECT count(DISTINCT vector) FROM embeddings").fetchone()[0]
+        check("embeddings are distinct, not one aggregated vector", distinct == embedded,
+              f"{distinct} distinct of {embedded}")
 
         theft = dense_search(conn, "what is the punishment for theft", k=3)
         check("theft query returns BNS 303 in top 3",

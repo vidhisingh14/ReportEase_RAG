@@ -181,7 +181,7 @@ Fuse with Reciprocal Rank Fusion, `score = sum(1 / (k + rank))` with k = 60. Tak
 
 Hybrid is not decoration here and the reason is specific to this corpus. Section numbers carry no semantic meaning of the kind that helps.
 
-The original version of this paragraph claimed the string "420" embeds to nothing useful, so dense retrieval cannot find it. Measured against the real index on 2026-08-23, that is false, and the truth makes the hybrid case stronger. Section numbers embed to **number identity**: asked for "IPC 34", dense retrieval confidently returns BNS 34, when the correct answer is BNS 3. Across 18 IPC numbers that also exist as BNS section numbers, dense returned the same number 14 times and the correct mapping **zero** times, against 9/9 recall@3 for sparse. Returning nothing would be a harmless failure a threshold catches; returning a plausible wrong law is the dangerous one. See `docs/superpowers/specs/2026-08-21-nyaya-design.md` §5 for the full measurement. Conversely "he took my phone while I was asleep" has no keyword overlap with the theft section but is semantically close. Each method fails exactly where the other works. Measure this rather than asserting it, see section 8.
+The original version of this paragraph claimed the string "420" embeds to nothing useful, so dense retrieval cannot find it. Measured against the real index on 2026-08-23, that is false, and the truth makes the hybrid case stronger. Section numbers embed to **number identity**: asked for "IPC 34", dense retrieval confidently returns BNS 34, when the correct answer is BNS 3. Across 18 IPC numbers that also exist as BNS section numbers (the collision set), dense returned the same number 14 times and the correct mapping **zero** times. Sparse, measured on a different, smaller hand-picked set of 9 numbers, scored 9/9 recall@3; dense scored 4/9 on that same 9-number set. The two headline figures are from different samples and are not directly comparable, but the qualitative finding — dense fails specifically where numbers collide, sparse does not — holds on both. Returning nothing would be a harmless failure a threshold catches; returning a plausible wrong law is the dangerous one. See `docs/superpowers/specs/2026-08-21-nyaya-design.md` §5 for the full measurement. Conversely "he took my phone while I was asleep" has no keyword overlap with the theft section but is semantically close. Each method fails exactly where the other works. Measure this rather than asserting it, see section 8.
 
 **Rerank.** Cross encoder over the top 8, keep the top 4. Phase 3.
 
@@ -262,7 +262,7 @@ Deliverables:
 
 - BNS section count within 5 of 358, BNSS within 5 of 531
 - Zero chunks under 50 characters
-- Zero chunks over 6000 characters
+- Zero chunks over 13000 characters (supersedes the original 6000: `config/acts.yaml` sets `max_chunk_chars: 13000` because "one chunk equals one section, never split" outranks this size estimate — four real sections exceed 6000, up to §2 Definitions at 12,902 characters. `max_embed_chars: 20000` is a separate, stricter guard against silent truncation by an embedding model that accepts 8,192 tokens.)
 - 5 randomly chosen sections verified by hand against the PDF, word for word
 - "What is the punishment for theft" returns BNS 303 in the top 3
 - "What is IPC 420 now" returns the correct BNS section

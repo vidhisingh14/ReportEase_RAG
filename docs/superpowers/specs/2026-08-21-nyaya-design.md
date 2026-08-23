@@ -239,7 +239,7 @@ bns:
 - **The index oracle check runs as a test**, not only inside ingest. It lives in `tests/` and therefore runs in CI on every push. A parser regression is caught by the test suite, not only by someone re-running ingest.
 - **Body text wins** on any index/body mismatch — §330 proves the index itself can be wrong.
 - **Every diff is logged with its section number.** Cosmetic diffs are expected and must not be silently swallowed, because a real extraction error would hide among them. The log is reviewed, not merely counted.
-- Additional invariants, per SPEC.md §7: zero chunks under 50 characters, zero over 6000, section numbers contiguous 1–358 and monotonic in document order.
+- Additional invariants, per SPEC.md §7: zero chunks under 50 characters, zero over 13000 (supersedes the originally stated 6000 — `config/acts.yaml` sets `max_chunk_chars: 13000` because "one chunk equals one section, never split" outranks a size estimate; four real sections exceed 6000, up to §2 Definitions at 12,902 characters. `max_embed_chars: 20000` is a separate, stricter guard against silent truncation by an embedding model that accepts 8,192 tokens), section numbers contiguous 1–358 and monotonic in document order.
 
 ### 4.4 De-hyphenation
 
@@ -300,7 +300,7 @@ fts tsvector GENERATED ALWAYS AS (
 
 **Why a column rather than transforming `maps_to` jsonb inline in the generated expression.** A jsonb-to-text transformation embedded in a generated column populates without erroring even when it is subtly wrong — a mis-keyed path or a wrong `jsonb_array_elements_text` unnest yields an empty or malformed string, the column fills, no exception is raised, and the only visible symptom is that migration queries quietly retrieve nothing. A plain column is inspectable with `SELECT section_number, maps_to_text FROM sections LIMIT 20`, diffable against the NCRB table by eye, and testable directly. It also keeps the mapping-flattening logic in Python where it can be unit tested, rather than in a DDL expression that only runs inside Postgres.
 
-BM25 then has a literal token to match. This keeps a single retrieval path, needs no special casing in the query router, and makes SPEC.md's stated dense-vs-sparse story actually true rather than merely plausible. The mapping tokens go into the **FTS document only**, not the embedding text, since section numbers embed to nothing useful.
+BM25 then has a literal token to match. This keeps a single retrieval path, needs no special casing in the query router, and makes SPEC.md's stated dense-vs-sparse story actually true rather than merely plausible. The mapping tokens go into the **FTS document only**, not the embedding text, since section numbers embed to number identity rather than to a useful semantic signal — putting them in the embedding text would invite exactly the confident-wrong-match failure documented above, not avoid it.
 
 This is what makes the Phase 2 migration-category result meaningful. Without it, the "sparse wins on migration" prediction in SPEC.md §7 would be measuring nothing.
 
@@ -406,7 +406,7 @@ Superseding the looser figures in SPEC.md §7 where the index oracle permits exa
 - [ ] BNS section count is **exactly 358**; chapter count exactly 20
 - [ ] Section numbers contiguous 1–358, unique, monotonic in document order
 - [ ] Index-oracle title agreement ≥ 350/358, with every diff logged by section number and reviewed
-- [ ] Zero chunks under 50 characters; zero over 6000
+- [ ] Zero chunks under 50 characters; zero over 13000 (supersedes the original 6000 — `config/acts.yaml` sets `max_chunk_chars: 13000` because "one chunk equals one section, never split" outranks a size estimate; four real sections exceed 6000: §2 at 12,902, §356 at 8,825, §335 at 7,387, §101 at 6,523. `max_embed_chars: 20000` is a separate, stricter guard against silent truncation by an embedding model that accepts 8,192 tokens.)
 - [ ] 5 randomly chosen sections verified by hand against the PDF, word for word
 - [ ] Ingest fails when run against a PDF whose SHA256 does not match the manifest
 - [ ] Embedding count equals section count (the aggregation tripwire fires correctly)

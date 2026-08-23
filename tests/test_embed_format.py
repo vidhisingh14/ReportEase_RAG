@@ -28,6 +28,9 @@ def test_model_constants():
 
 
 def test_document_format_does_not_include_section_numbers():
-    """Section numbers embed to nothing useful. They are matched by BM25 via
-    the FTS column instead."""
+    """Section numbers embed to number identity, not to nothing (measured:
+    dense retrieval confidently returns the wrong section by number
+    coincidence, e.g. "IPC 34" -> BNS 34 instead of BNS 3). That is a reason
+    to keep them out of the embedding text, not a reason to think they are
+    harmless here. They are matched by BM25 via the FTS column instead."""
     assert "303" not in format_document(_section())
