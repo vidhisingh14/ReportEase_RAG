@@ -1,0 +1,124 @@
+name: CI
+
+# Design doc §6.3 requires every push to run: unit tests, the parser
+# index-oracle test, chunk invariants, and retrieval eval -- all with ZERO
+# generation calls.
+#
+# This workflow has NO API keys configured (no GEMINI_API_KEY, no
+# ANTHROPIC_API_KEY), so it is scoped to exactly what can run honestly
+# without secrets:
+#
+#   - the default unit suite (no database, no API key)
+#   - the parser (src.ingest / src.mapping) against the committed source
+#     PDFs -- pure PDF parsing, no API calls, and this genuinely exercises
+#     the index-oracle validation and chunk-size invariants on every push
+#   - the database-only integration tests (tests/test_db.py), against a
+#     disposable pgvector service container -- never Neon
+#
+# Deliberately NOT run here: tests/test_store.py, tests/test_retrieve.py,
+# tests/test_embed.py, and test_generate.py's live test. All of them need
+# GEMINI_API_KEY (embedding or generation calls), which this workflow does
+# not have and must not spend even if it did -- gemini-2.5-flash is capped
+# at 250 requests/day. The retrieval eval harness named in the design doc
+# (§6.2, Harness A) is a Phase 2 deliverable and does not exist yet either;
+# once it lands, it belongs here too, since it is specified to make zero
+# generation calls.
+#
+# To add the missing pieces later: add GEMINI_API_KEY as a repository
+# secret, then run `pytest tests/test_store.py tests/test_retrieve.py
+# tests/test_embed.py -m integration` (embedding-quota only) and, once it
+# exists, Harness A's retrieval eval. Keep test_generate.py's live test and
+# any generation-eval harness OUT of the every-push job per §6.3 -- those
+# stay nightly/on-demand.
+
+on:
+  push:
+  pull_request:
+
+# Cancel superseded runs on the same branch so pushes don't queue behind
+# stale ones.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests, parser validation, and DB integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_USER: nyaya
+          POSTGRES_PASSWORD: nyaya
+          POSTGRES_DB: nyaya_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U nyaya -d nyaya_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Points integration tests at the disposable service container, never
+      # at Neon. See src/db.py:resolve_database_url. No DATABASE_URL is set
+      # in this workflow at all, so a test that forgot to use
+      # TEST_DATABASE_URL would fail loudly instead of silently touching a
+      # real database.
+      TEST_DATABASE_URL: postgresql://nyaya:nyaya@localhost:55432/nyaya_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run default unit suite (no database, no API key)
+        run: pytest tests/ -v
+
+      - name: Wait for Postgres service to be healthy
+        run: |
+          until pg_isready -h localhost -p 55432 -U nyaya -d nyaya_test; do
+            sleep 1
+          done
+        env:
+          PGPASSWORD: nyaya
+
+      - name: Create schema against the service container
+        run: |
+          python <<'PYEOF'
+          from src.db import connect, create_schema
+          with connect() as conn:
+              create_schema(conn)
+          print("schema created")
+          PYEOF
+
+      - name: Parse the BNS PDF (src.ingest) -- no API calls
+        run: python -m src.ingest
+
+      - name: Parse the BNS-to-IPC mapping table (src.mapping) -- no API calls
+        run: python -m src.mapping
+
+      - name: Assert parser output counts
+        run: |
+          python <<'PYEOF'
+          import json
+          sections = json.load(open("data/processed/sections.json", encoding="utf-8"))
+          mappings = json.load(open("data/processed/mappings.json", encoding="utf-8"))
+          assert len(sections) == 358, f"expected 358 sections, got {len(sections)}"
+          assert len(mappings) >= 330, f"expected >= 330 mappings, got {len(mappings)}"
+          print(f"OK: {len(sections)} sections, {len(mappings)} mappings")
+          PYEOF
+
+      - name: Run database-only integration tests against the service container
+        run: pytest tests/test_db.py -m integration -v

@@ -1,0 +1,41 @@
+# Integration-test database ONLY.
+#
+# Development and production both run on Neon Postgres (see
+# docs/superpowers/specs/2026-08-21-nyaya-design.md §1.1) so the environments
+# match. This compose file does not change that -- it is not a dev
+# environment and nothing in the app points at it by default.
+#
+# What it is: a disposable local Postgres + pgvector container that
+# integration tests can target instead of the shared Neon dev project.
+# Integration tests are destructive by nature (one of them wiped the
+# embeddings table during the Phase 1 build), so a container that can be
+# thrown away and rebuilt in seconds makes that harmless. Point tests at it
+# by setting TEST_DATABASE_URL -- see src/db.py:resolve_database_url and
+# .env.example.
+#
+# The Phase 4 packaging docker-compose.yml (running the full app stack) is a
+# separate, future deliverable and is not this file.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   TEST_DATABASE_URL=postgresql://nyaya:nyaya@localhost:55432/nyaya_test \
+#     pytest tests/ -m integration
+#   docker compose -f docker-compose.test.yml down -v   # throw it away
+
+services:
+  test-db:
+    image: pgvector/pgvector:pg18
+    container_name: nyaya-test-db
+    environment:
+      POSTGRES_USER: nyaya
+      POSTGRES_PASSWORD: nyaya
+      POSTGRES_DB: nyaya_test
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nyaya -d nyaya_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # No named volume: data does not need to survive a `down`. Being
+    # wipeable on every recreate is the point, not an oversight.

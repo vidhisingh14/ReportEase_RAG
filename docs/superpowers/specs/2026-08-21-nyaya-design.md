@@ -19,6 +19,8 @@ Development and production both run on Neon, so environments match.
 
 `.env.example` lists every variable with blank values. `.env` is in `.gitignore` before any other code is written.
 
+**Portability proof, 2026-08-24.** The "no Neon-specific features" claim above was tested, not assumed. Schema (`sql/schema.sql`), `python -m src.store` (358 sections, 358 embeddings, zero embedding API calls -- served entirely from `.cache/embeddings/`), the full integration suite, and `python -m scripts.acceptance` (16/16) all ran unmodified against a local `pgvector/pgvector:pg18` container (`docker-compose.test.yml`, `TEST_DATABASE_URL`) -- Postgres 18.6, pgvector 0.8.6, an exact version match to the Neon dev project. Everything passed with no code changes: generated `tsvector` column, `CHECK` constraints, pgvector cosine distance, FTS. Nothing Neon-specific was found. The integration suite ran in ~7s wall clock against the container versus 228s and 384s recorded against Neon for `tests/test_store.py -m integration` alone -- the gap is network latency to Neon's hosted endpoint, not anything architectural.
+
 ### 1.2 Models — Gemini free tier, no OpenAI anywhere
 
 **Embeddings: `gemini-embedding-2`**
