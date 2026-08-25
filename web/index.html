@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyaya — grounded answers from Indian criminal law</title>
+<meta name="description" content="Ask about Indian criminal law in plain words. Every answer is built from the sections shown beside it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── tokens ───────────────────────────────────────────────────────────────
+   Colour encodes legal status, not mood:
+     --bns  current law, stamp violet
+     --ipc  repealed law, faded
+   Paper is a cool tinted form-paper, not warm cream.                      */
+:root{
+  --paper:#EDEFEA;
+  --card:#F7F8F5;
+  --ink:#14171A;
+  --ink-2:#4A5157;
+  --ink-3:#767E85;
+  --rule:#C8CDC3;
+  --rule-2:#D8DCD3;
+  --bns:#3B2E80;
+  --bns-wash:#3B2E801A;
+  --ipc:#8C8073;
+  --flag:#9C3A1E;
+  --focus:#3B2E80;
+
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --serif:"Spectral",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+
+  --measure:62ch;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171B; --card:#1E2127;
+    --ink:#E8EAE5; --ink-2:#AEB5BC; --ink-3:#828A92;
+    --rule:#333941; --rule-2:#272C33;
+    --bns:#A99CF0; --bns-wash:#A99CF01F; --ipc:#9A8E80;
+    --flag:#E08060; --focus:#A99CF0;
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:17px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:2px}
+
+/* ── masthead ─────────────────────────────────────────────────────────── */
+.masthead{
+  display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+  padding:14px 24px; border-bottom:1px solid var(--rule);
+  background:var(--paper);
+  position:sticky; top:0; z-index:20;
+}
+.wordmark{
+  font-family:var(--display); font-weight:800; font-size:20px;
+  letter-spacing:-.025em; margin:0;
+}
+.wordmark span{color:var(--bns)}
+.masthead .act{
+  font-family:var(--mono); font-size:11px; color:var(--ink-3);
+  letter-spacing:.02em;
+}
+.masthead .advice{
+  margin-left:auto; font-family:var(--mono); font-size:11px;
+  color:var(--ink-3); border:1px solid var(--rule); padding:3px 8px;
+}
+
+/* ── ask ──────────────────────────────────────────────────────────────── */
+.ask{padding:56px 24px 34px; border-bottom:1px solid var(--rule)}
+.ask-inner{max-width:1180px; margin:0 auto}
+.lede{
+  font-family:var(--display); font-weight:400;
+  font-size:clamp(30px,5.2vw,52px); line-height:1.06;
+  letter-spacing:-.032em; margin:0 0 14px; max-width:19ch;
+}
+.lede em{font-style:normal; color:var(--bns)}
+.sub{
+  font-size:16px; color:var(--ink-2); margin:0 0 26px; max-width:56ch;
+}
+form{display:flex; gap:0; border:1.5px solid var(--ink); background:var(--card); max-width:820px}
+#q{
+  flex:1; border:0; background:transparent; color:var(--ink);
+  font-family:var(--serif); font-size:17px; padding:15px 18px; min-width:0;
+}
+#q::placeholder{color:var(--ink-3)}
+#q:focus{outline:none}
+form:focus-within{outline:2px solid var(--focus); outline-offset:2px}
+button.go{
+  border:0; border-left:1.5px solid var(--ink); background:var(--ink); color:var(--paper);
+  font-family:var(--display); font-weight:600; font-size:14px; letter-spacing:.01em;
+  padding:0 22px; cursor:pointer;
+}
+button.go:hover{background:var(--bns)}
+
+.examples{
+  margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  font-family:var(--mono); font-size:12px; color:var(--ink-3);
+}
+.examples button{
+  font-family:var(--mono); font-size:12px; color:var(--ink-2);
+  background:transparent; border:1px solid var(--rule); padding:5px 10px;
+  cursor:pointer;
+}
+.examples button:hover{border-color:var(--bns); color:var(--bns)}
+
+/* ── split ────────────────────────────────────────────────────────────── */
+.split{
+  max-width:1180px; margin:0 auto; display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+}
+.col{padding:30px 24px 72px}
+.col + .col{border-left:1px solid var(--rule)}
+.colhead{
+  display:flex; align-items:baseline; gap:10px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-3);
+  padding-bottom:9px; border-bottom:1px solid var(--rule-2); margin-bottom:22px;
+}
+.colhead .count{margin-left:auto; text-transform:none; letter-spacing:0}
+
+/* ── answer ───────────────────────────────────────────────────────────── */
+.answer{font-size:17.5px; line-height:1.68; max-width:var(--measure)}
+.answer p{margin:0 0 15px}
+.answer ul{margin:0 0 15px; padding-left:0; list-style:none}
+.answer li{margin:0 0 9px; padding-left:16px; position:relative}
+.answer li::before{
+  content:"—"; position:absolute; left:0; color:var(--ink-3);
+}
+.answer strong{font-weight:600}
+
+/* the binding between answer and law — the signature of this page */
+.cite{
+  font-family:var(--mono); font-size:.82em; font-weight:500;
+  color:var(--bns); background:var(--bns-wash);
+  border:0; border-bottom:1px solid var(--bns);
+  padding:1px 4px; cursor:pointer; white-space:nowrap;
+}
+.cite:hover,.cite.on{background:var(--bns); color:var(--card)}
+
+/* ── provenance ───────────────────────────────────────────────────────── */
+.prov{
+  margin-top:30px; padding-top:16px; border-top:1px solid var(--rule-2);
+  font-family:var(--mono); font-size:11.5px; color:var(--ink-3); line-height:1.85;
+}
+.prov dt{
+  letter-spacing:.09em; text-transform:uppercase; font-size:10.5px;
+  color:var(--ink-3); margin-bottom:5px;
+}
+.prov dd{margin:0 0 13px}
+.chip{
+  display:inline-block; border:1px solid var(--rule); padding:2px 7px;
+  margin:0 4px 4px 0; color:var(--ink-2);
+}
+.chip.used{border-color:var(--bns); color:var(--bns)}
+.chip.gone{border-color:var(--flag); color:var(--flag); text-decoration:line-through}
+.prov .note{color:var(--flag)}
+
+.disclaimer{
+  margin-top:26px; padding:13px 15px; border-left:2px solid var(--rule);
+  font-size:13.5px; color:var(--ink-2); max-width:var(--measure);
+}
+
+/* ── the Act, typeset as an Act ───────────────────────────────────────── */
+.section{
+  padding:16px 0 20px 52px; position:relative;
+  border-bottom:1px solid var(--rule-2); scroll-margin-top:96px;
+  transition:background .35s ease;
+}
+.section:last-child{border-bottom:0}
+.section.lit{background:var(--bns-wash)}
+.secno{
+  position:absolute; left:0; top:17px; width:42px;
+  font-family:var(--mono); font-size:12px; font-weight:600; color:var(--bns);
+  text-align:right;
+}
+.sectitle{
+  font-family:var(--serif); font-weight:600; font-size:16px;
+  margin:0 0 3px; display:inline;
+}
+.sectitle::after{content:"\2014"; color:var(--ink-3); font-weight:400}
+.secbody{
+  font-size:14.5px; line-height:1.62; color:var(--ink-2);
+  margin:0; display:inline;
+}
+.secmeta{
+  margin-top:11px; font-family:var(--mono); font-size:10.5px;
+  color:var(--ink-3); letter-spacing:.02em;
+}
+.secmeta .repealed{color:var(--ipc)}
+.illus{
+  margin:11px 0 0; padding:10px 0 0; border-top:1px dotted var(--rule);
+  font-size:13.5px; line-height:1.6; color:var(--ink-2);
+}
+.illus .lbl{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:5px;
+}
+.illus i{font-style:italic}
+
+/* ── empty / specimen ─────────────────────────────────────────────────── */
+.specimen-note{
+  font-family:var(--mono); font-size:11.5px; color:var(--ink-3);
+  margin:0 0 20px; line-height:1.8;
+}
+.placeholder{
+  font-family:var(--mono); font-size:12.5px; color:var(--ink-3);
+  line-height:1.9; max-width:46ch;
+}
+.placeholder b{color:var(--ink-2); font-weight:500}
+
+/* ── loading ──────────────────────────────────────────────────────────── */
+.working{font-family:var(--mono); font-size:12px; color:var(--ink-3)}
+.working::after{content:"▍"; animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ── foot ─────────────────────────────────────────────────────────────── */
+.foot{
+  border-top:1px solid var(--rule); padding:22px 24px 40px;
+  font-family:var(--mono); font-size:11px; color:var(--ink-3); line-height:1.9;
+}
+.foot-inner{max-width:1180px; margin:0 auto; display:flex; gap:26px; flex-wrap:wrap}
+.foot a{color:var(--ink-2)}
+
+/* page-load sequence — one orchestrated moment, not scattered effects */
+.rise{animation:rise .55s cubic-bezier(.2,.7,.3,1) both}
+.rise:nth-child(2){animation-delay:.06s}
+.rise:nth-child(3){animation-delay:.12s}
+@keyframes rise{from{opacity:0; transform:translateY(9px)} to{opacity:1; transform:none}}
+
+@media (max-width:860px){
+  .split{grid-template-columns:1fr}
+  .col + .col{border-left:0; border-top:1px solid var(--rule)}
+  .ask{padding:36px 20px 26px}
+  .col{padding:24px 20px 48px}
+  .masthead{padding:12px 20px}
+  .section{padding-left:44px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <h1 class="wordmark">Nyaya<span>.</span></h1>
+  <span class="act">Bharatiya Nyaya Sanhita, 2023 · Act 45 · as on 6 Oct 2025 · 358 sections indexed</span>
+  <span class="advice">not legal advice</span>
+</header>
+
+<section class="ask">
+  <div class="ask-inner">
+    <h2 class="lede rise">Ask in plain words. Read the <em>actual law</em>.</h2>
+    <p class="sub rise">Answers are built only from the sections shown beside them. Any citation that doesn't match what was retrieved is removed before you see it.</p>
+    <form id="form" class="rise" autocomplete="off">
+      <label for="q" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Your question</label>
+      <input id="q" name="q" type="text" placeholder="he took my phone while I was asleep">
+      <button class="go" type="submit">Ask</button>
+    </form>
+    <div class="examples">
+      <span>Try</span>
+      <button type="button" data-q="he took my phone while I was asleep">a situation</button>
+      <button type="button" data-q="what is IPC 420 now">an old IPC number</button>
+      <button type="button" data-q="what does the law say about stalking">a named offence</button>
+    </div>
+  </div>
+</section>
+
+<main class="split">
+  <div class="col">
+    <div class="colhead"><span>Answer</span><span class="count" id="answer-meta"></span></div>
+    <div id="answer-slot">
+      <p class="placeholder">
+        Ask a question and the answer appears here, with every claim tied to a
+        section on the right.<br><br>
+        <b>What this does not do:</b> it does not search the web, cite judgments,
+        or cover criminal procedure. Only the text of the Sanhita.
+      </p>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="colhead"><span>The law</span><span class="count" id="law-meta">specimen</span></div>
+    <div id="law-slot"></div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <span>Source: indiacode.nic.in · SHA256-verified at ingest</span>
+    <span>IPC mapping: NCRB correspondence table</span>
+    <span>Questions are processed by a third-party AI service and are not stored.</span>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* Point this at the API once it exists. While it is null the page serves
+   recorded answers for the three example questions — honestly labelled,
+   never invented. */
+const API_BASE = null;
+
+const SECTIONS = {
+  "bns-303": {
+    n: "303", title: "Theft", chapter: "XVII · Of offences against property",
+    ipc: ["378", "379"],
+    body: "(1) Whoever, intending to take dishonestly any movable property out of the possession of any person without that person’s consent, moves that property in order to such taking, is said to commit theft. <i>Explanation 1.</i>—A thing so long as it is attached to the earth, not being movable property, is not the subject of theft; but it becomes capable of being the subject of theft as soon as it is severed from the earth. (2) Whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both.",
+    illus: "(f) A finds a ring belonging to Z on a table in the house which Z occupies. Here the ring is in Z’s possession, and if A dishonestly removes it, A commits theft."
+  },
+  "bns-318": {
+    n: "318", title: "Cheating", chapter: "XVII · Of offences against property",
+    ipc: ["415", "417", "418", "420"],
+    body: "(1) Whoever, by deceiving any person, fraudulently or dishonestly induces the person so deceived to deliver any property to any person, or to consent that any person shall retain any property, or intentionally induces the person so deceived to do or omit to do anything which he would not do or omit if he were not so deceived, and which act or omission causes or is likely to cause damage or harm to that person in body, mind, reputation or property, is said to cheat. <i>Explanation.</i>—A dishonest concealment of facts is a deception within the meaning of this section.",
+    illus: "(b) A, by putting a counterfeit mark on an article, intentionally deceives Z into a belief that this article was made by a certain celebrated manufacturer, and thus dishonestly induces Z to buy and pay for the article. A cheats."
+  },
+  "bns-304": {
+    n: "304", title: "Snatching", chapter: "XVII · Of offences against property",
+    ipc: ["379"],
+    body: "(1) Theft is snatching if, in order to commit theft, the offender suddenly or quickly or forcibly seizes or secures or grabs or takes away from any person or from his possession any movable property. (2) Whoever commits snatching shall be punished with imprisonment of either description for a term which may extend to three years, and shall also be liable to fine.",
+    illus: null
+  },
+  "bns-78": {
+    n: "78", title: "Stalking", chapter: "V · Of offences against woman and child",
+    ipc: ["354D"],
+    body: "(1) Any man who— (i) follows a woman and contacts, or attempts to contact such woman to foster personal interaction repeatedly despite a clear indication of disinterest by such woman; or (ii) monitors the use by a woman of the internet, e-mail or any other form of electronic communication, commits the offence of stalking. (2) Whoever commits the offence of stalking shall be punished on first conviction with imprisonment of either description for a term which may extend to three years, and shall also be liable to fine.",
+    illus: null
+  },
+  "bns-77": {
+    n: "77", title: "Voyeurism", chapter: "V · Of offences against woman and child",
+    ipc: ["354C"],
+    body: "Whoever watches, or captures the image of a woman engaging in a private act in circumstances where she would usually have the expectation of not being observed either by the perpetrator or by any other person at the behest of the perpetrator or disseminates such image shall be punished on first conviction with imprisonment of either description for a term which shall not be less than one year, but which may extend to three years, and shall also be liable to fine.",
+    illus: null
+  }
+};
+
+const RECORDED = {
+  "he took my phone while i was asleep": {
+    retrieved: ["bns-303", "bns-304", "bns-77"],
+    cited: ["bns-303", "bns-304"],
+    stripped: [],
+    html: "<p>Taking someone’s movable property out of their possession without consent, and moving it in order to take it, is theft <span class='cite' data-s='bns-303'>BNS 303(1)</span>. A sleeping person is still in possession of the phone, so consent is absent.</p>" +
+          "<p>The punishment is imprisonment of either description which may extend to three years, or a fine, or both <span class='cite' data-s='bns-303'>BNS 303(2)</span>.</p>" +
+          "<p>If the phone had been seized suddenly or forcibly rather than taken quietly, the offence would instead be snatching <span class='cite' data-s='bns-304'>BNS 304</span>, which carries the same maximum term but also a mandatory fine.</p>"
+  },
+  "what is ipc 420 now": {
+    retrieved: ["bns-318", "bns-303"],
+    cited: ["bns-318"],
+    stripped: ["420"],
+    html: "<p>IPC 420 is now <span class='cite' data-s='bns-318'>BNS 318</span>. The old section covered cheating and dishonestly inducing delivery of property; that conduct now sits inside the general cheating provision.</p>" +
+          "<p>Four IPC sections collapsed into this one: 415, 417, 418 and 420 <span class='cite' data-s='bns-318'>BNS 318</span>. The definition is unchanged in substance — deceiving a person into delivering property, or into doing something they would not otherwise have done.</p>"
+  },
+  "what does the law say about stalking": {
+    retrieved: ["bns-78", "bns-77"],
+    cited: ["bns-78", "bns-77"],
+    stripped: [],
+    html: "<p>Stalking is defined in <span class='cite' data-s='bns-78'>BNS 78</span> and covers two distinct kinds of conduct:</p>" +
+          "<ul><li>Following a woman and repeatedly contacting or attempting to contact her despite a clear indication of disinterest.</li>" +
+          "<li>Monitoring her use of the internet, email or any other form of electronic communication <span class='cite' data-s='bns-78'>BNS 78(1)</span>.</li></ul>" +
+          "<p>First conviction carries imprisonment which may extend to three years and a fine <span class='cite' data-s='bns-78'>BNS 78(2)</span>.</p>" +
+          "<p>Where images are captured or shared rather than movements followed, the relevant section is voyeurism <span class='cite' data-s='bns-77'>BNS 77</span>.</p>"
+  }
+};
+
+const $ = (s) => document.querySelector(s);
+const answerSlot = $("#answer-slot");
+const lawSlot = $("#law-slot");
+const answerMeta = $("#answer-meta");
+const lawMeta = $("#law-meta");
+
+function sectionHTML(id, section) {
+  const ipc = section.ipc && section.ipc.length
+    ? `<span class="repealed">was IPC ${section.ipc.join(", ")}</span>` : "";
+  const illus = section.illus
+    ? `<div class="illus"><span class="lbl">Illustration</span>${section.illus}</div>` : "";
+  return `<article class="section" id="sec-${id}">
+    <span class="secno">${section.n}.</span>
+    <h3 class="sectitle">${section.title}</h3><p class="secbody">${section.body}</p>
+    <div class="secmeta">Chapter ${section.chapter}${ipc ? " &nbsp;·&nbsp; " + ipc : ""}</div>
+    ${illus}
+  </article>`;
+}
+
+function renderLaw(ids) {
+  lawSlot.innerHTML = ids.map((id) => sectionHTML(id, SECTIONS[id])).join("");
+  lawMeta.textContent = ids.length + (ids.length === 1 ? " section" : " sections") + " retrieved";
+  bindCites();
+}
+
+function renderSpecimen() {
+  lawSlot.innerHTML =
+    `<p class="specimen-note">Every answer is drawn from sections set exactly as they appear in the Act — numbered, with their illustrations kept.</p>` +
+    sectionHTML("bns-303", SECTIONS["bns-303"]);
+  lawMeta.textContent = "specimen";
+}
+
+function provenanceHTML(rec) {
+  const chips = rec.retrieved.map((id) => {
+    const used = rec.cited.includes(id);
+    return `<span class="chip ${used ? "used" : ""}">BNS ${SECTIONS[id].n}</span>`;
+  }).join("");
+  const stripped = rec.stripped.length
+    ? `<dt>Removed</dt><dd>` +
+      rec.stripped.map((n) => `<span class="chip gone">BNS ${n}</span>`).join("") +
+      `<span class="note">cited but not retrieved — stripped before display</span></dd>`
+    : "";
+  return `<dl class="prov">
+    <dt>Sections retrieved · outlined ones were cited</dt><dd>${chips}</dd>
+    ${stripped}
+  </dl>
+  <p class="disclaimer">This is information about the text of a statute, not legal advice. If you are in immediate danger call 112. Women’s helpline 181. Childline 1098.</p>`;
+}
+
+function bindCites() {
+  document.querySelectorAll(".cite").forEach((el) => {
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    const go = () => {
+      const id = el.dataset.s;
+      const target = document.getElementById("sec-" + id);
+      if (!target) return;
+      document.querySelectorAll(".section").forEach((s) => s.classList.remove("lit"));
+      document.querySelectorAll(".cite").forEach((c) => c.classList.remove("on"));
+      target.classList.add("lit");
+      el.classList.add("on");
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
+}
+
+function show(rec) {
+  answerSlot.innerHTML = `<div class="answer">${rec.html}</div>` + provenanceHTML(rec);
+  answerMeta.textContent = rec.cited.length + " cited";
+  renderLaw(rec.retrieved);
+  bindCites();
+}
+
+function notRecorded(question) {
+  answerMeta.textContent = "";
+  answerSlot.innerHTML =
+    `<p class="placeholder">No recorded answer for “<b>${question.replace(/[<>&]/g, "")}</b>”.<br><br>` +
+    `This page is running without its API, so only the three example questions have answers. ` +
+    `Connect the backend and every question works.</p>`;
+  renderSpecimen();
+}
+
+async function ask(question) {
+  const key = question.trim().toLowerCase().replace(/[?.!]+$/, "");
+  if (!key) return;
+
+  answerMeta.textContent = "";
+  answerSlot.innerHTML = `<p class="working">retrieving</p>`;
+
+  if (API_BASE) {
+    try {
+      const res = await fetch(API_BASE + "/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      if (!res.ok) throw new Error("status " + res.status);
+      show(await res.json());
+      return;
+    } catch (err) {
+      answerSlot.innerHTML =
+        `<p class="placeholder">The service did not answer (<b>${err.message}</b>). ` +
+        `It may be waking up — try again in a few seconds.</p>`;
+      return;
+    }
+  }
+
+  window.setTimeout(() => {
+    const rec = RECORDED[key];
+    if (rec) show(rec); else notRecorded(question);
+  }, 260);
+}
+
+$("#form").addEventListener("submit", (e) => { e.preventDefault(); ask($("#q").value); });
+document.querySelectorAll(".examples button").forEach((b) => {
+  b.addEventListener("click", () => { $("#q").value = b.dataset.q; ask(b.dataset.q); });
+});
+
+renderSpecimen();
+</script>
+</body>
+</html>
