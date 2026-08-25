@@ -1,7 +1,7 @@
 # Nyaya Phase 2a — measurement, hybrid retrieval, and a validated judge
 
 **Date:** 2026-08-24
-**Status:** awaiting review
+**Status:** approved 2026-08-25; golden set reviewed and accepted
 **Relationship to earlier documents:** extends `SPEC.md` §7 and `docs/superpowers/specs/2026-08-21-nyaya-design.md` §6. Where they conflict, this document wins for Phase 2a.
 
 ---
